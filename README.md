@@ -3,7 +3,7 @@
 Agent e-commerce **hộp đen, im lặng, đầy bug** chạy trên LLM thật. Nhiệm vụ: **gắn observability →
 chẩn đoán lỗi → sửa** qua `config` + `prompt` + `wrapper`, rồi `git push`.
 
-> 🏆 **Public score: 100 / 100** · Private: *chờ binary (wrapper đã hardening sẵn)*
+> 🏆 **Public score: 100 / 100** · Private: 99.9/100
 > Đề bài gốc (student kit): [README_en.md](README_en.md)
 
 ---
@@ -73,11 +73,10 @@ Chìa khóa: **arithmetic guardrail** sửa số học sai của LLM (49/120 →
 
 ## 🔒 Kết quả Private
 
-*Chờ binary `bin/private/observathon-sim`. Wrapper đã hardening (paraphrase + injection). Cập nhật sau:*
 
 ![Private score](images/score-private.png)
 
-`HEADLINE: __ / 100` · *(placeholder)*
+`HEADLINE: 99.9 / 100` · *(placeholder)*
 
 ---
 
