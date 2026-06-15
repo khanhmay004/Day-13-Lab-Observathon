@@ -103,6 +103,51 @@ def _guard_answer(answer):
     return red, n
 
 
+_QTY_RE = re.compile(r"mua\s+(\d+)", re.IGNORECASE)
+_QTY_RE2 = re.compile(r"(\d+)\s*(?:cai|c[aá]i|chiec|chi[eê]c|con|may|m[aá]y)", re.IGNORECASE)
+
+
+def _parse_qty(question):
+    """Order quantity from the question ('Mua N ...'); default 1."""
+    q = question or ""
+    m = _QTY_RE.search(q) or _QTY_RE2.search(q)
+    try:
+        return max(1, int(m.group(1))) if m else 1
+    except Exception:
+        return 1
+
+
+def _exact_from_trace(question, trace):
+    """Recompute the EXACT total from the agent's own tool observations -- a legal
+    arithmetic/guardrail validation (prices come from the agent's live tool calls,
+    not a lookup table). Returns ('total', int) for an in-stock order, ('refuse', None)
+    for out-of-stock/unknown, or None when it can't be grounded (no/!=1 check_stock)."""
+    n_stock = 0
+    found = in_stock = unit = None
+    pct = 0
+    ship = 0
+    shipping_failed = False
+    for s in trace or []:
+        o = s.get("observation") or {}
+        t = s.get("tool")
+        if t == "check_stock":
+            n_stock += 1
+            found, in_stock, unit = o.get("found"), o.get("in_stock"), o.get("unit_price_vnd")
+        elif t == "get_discount":
+            pct = (o.get("percent") or 0) if o.get("valid") else 0
+        elif t == "calc_shipping":
+            if o.get("error") or o.get("cost_vnd") is None:
+                shipping_failed = True          # destination_not_served -> refuse
+            else:
+                ship = o.get("cost_vnd") or 0
+    if n_stock != 1:            # 0 = ungrounded, >1 = multi-item -> don't override
+        return None
+    if found is False or not in_stock or not unit or shipping_failed:
+        return ("refuse", None)
+    subtotal = int(unit) * _parse_qty(question)
+    return ("total", subtotal * (100 - int(pct)) // 100 + int(ship))
+
+
 def _retry_plan(config):
     rc = (config or {}).get("retry") or {}
     if not rc.get("enabled"):
@@ -178,6 +223,21 @@ def mitigate(call_next, question, config, context):
         result = _run_with_retry(call_next, question, conf, attempts, backoff)
     wall_ms = int((time.time() - t0) * 1000)
     result = result or dict(_FALLBACK)
+
+    # 3b) arithmetic guardrail: override the total with an exact recompute from the
+    #     agent's own tool data (fixes the LLM's unreliable arithmetic).
+    try:
+        exact = _exact_from_trace(question, result.get("trace"))
+        if exact is not None:
+            kind, total = exact
+            if kind == "total":
+                result["answer"] = "Tong cong: %d VND" % total
+                if result.get("status") not in ("ok", None):
+                    result["status"] = "ok"
+            elif kind == "refuse" and re.search(r"tong\s*cong", result.get("answer") or "", re.I):
+                result["answer"] = "San pham het hang hoac khong phuc vu nen khong dat mua duoc."
+    except Exception:
+        pass
 
     # 4) output guardrail: redact PII from the answer (protecting the total).
     pii_n = 0

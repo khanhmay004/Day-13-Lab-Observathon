@@ -1,0 +1,21 @@
+{
+  "team": "solo858-team-name",
+  "phase": "public",
+  "headline": 100.0,
+  "sub": {
+    "correct": 0.98,
+    "quality": 0.988,
+    "error": 1.0,
+    "latency": 0.6627,
+    "cost": 0.7327,
+    "drift": 1.0,
+    "prompt": 0.9399
+  },
+  "diag_f1": 0.952,
+  "n": 120,
+  "n_correct": 114,
+  "judge_mode": "offline",
+  "weights_hash": "e81a8ed58d93",
+  "key_hash": "9a800fa6968d",
+  "sig": "be7933e4b9ea0f8a0f8e645805d1a8cae0accacf627e364051831715953c02ac"
+}
