@@ -10,7 +10,6 @@ venv/
 logs/
 traces/
 *.db
-score.json
 dashboard_summary.json
 .env
 .DS_Store
